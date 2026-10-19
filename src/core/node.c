@@ -2521,8 +2521,10 @@ dom_exception _dom_node_dispatch_event(dom_event_target *et,
 	ntargets_allocated = 0;
 	ntargets = 0;
 
-	/* Add interested event listeners to array */
-	for (; target != NULL; target = target->parent) {
+	/* Add interested event listeners to array: the target's ancestors
+	 * (the target's own listeners run in the target phase)
+	 */
+	for (target = target->parent; target != NULL; target = target->parent) {
 		struct listener_entry *le = target->eti.listeners;
 		bool target_has_listener = false;
 
@@ -2602,10 +2604,10 @@ dom_exception _dom_node_dispatch_event(dom_event_target *et,
 	if (evt->stop_now == true || evt->stop == true)
 		goto cleanup;
 
-	/* Bubbling phase */
+	/* Bubbling phase (an event that bubbles) */
 	evt->phase = DOM_BUBBLING_PHASE;
 
-	for (targetnr = 0; targetnr < ntargets; ++targetnr) {
+	for (targetnr = 0; evt->bubble && targetnr < ntargets; ++targetnr) {
 		dom_node_internal *node =
 			(dom_node_internal *) targets[targetnr];
 		err = _dom_event_target_dispatch(targets[targetnr],
